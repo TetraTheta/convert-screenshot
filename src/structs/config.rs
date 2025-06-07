@@ -1,6 +1,6 @@
-use serde::{Deserialize, Serialize};
 use crate::structs::enums::{Game, Operation};
 use crate::structs::options::parse_tuple;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct TomlConfig {
@@ -62,7 +62,7 @@ impl TomlConfig {
           crop_foreground4_height: Some(655),
           uid_area: Some("144,22".into()),
           uid_position: Some("1744,1059".into()),
-        })
+        }),
       }),
     }
   }

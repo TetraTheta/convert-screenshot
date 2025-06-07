@@ -1,6 +1,5 @@
 use clap::ValueEnum;
 use serde::Serialize;
-use clap;
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum, Serialize)]
 pub enum CropPosition {

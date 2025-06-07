@@ -1,8 +1,6 @@
 # yaml-language-server: $schema=https://taskfile.dev/schema.json
 version: '3'
 
-vars:
-
 tasks:
   default:
     cmds:
@@ -10,4 +8,4 @@ tasks:
   build:windows:
     cmds:
       - cargo build --color=always --profile release
-      - coreutils cp --remove-destination ./target/release/cs.exe .
+      - coreutils cp --remove-destination ./target/release/cs.exe ./.bin

@@ -1,5 +1,5 @@
-use crate::structs::enums::{CropPosition, Game, Operation};
 use crate::structs::config::TomlConfig;
+use crate::structs::enums::{CropPosition, Game, Operation};
 use clap::Parser;
 use serde::Serialize;
 use std::env;
@@ -77,7 +77,13 @@ pub struct JobData {
 
 pub fn merge_options(opt: &Options, config: &TomlConfig, target: &Path, game: Game, op: Operation) -> MergedOption {
   // crop_height
-  let crop_height = opt.crop_height.or_else(|| config.crop_height_for(game, op)).expect("'Crop Height' must be provided either on the CLI or in the TOML config.");
+  let crop_height = match op {
+    Operation::All | Operation::CreateDirectory | Operation::Full => 0,
+    _ => opt
+      .crop_height
+      .or_else(|| config.crop_height_for(game, op))
+      .expect("'Crop Height' must be provided either on the CLI or in the TOML config."),
+  };
 
   // crop_pos
   let crop_pos = opt.crop_pos.unwrap_or_else(|| match op {
@@ -93,11 +99,8 @@ pub fn merge_options(opt: &Options, config: &TomlConfig, target: &Path, game: Ga
   let uid_pos = opt.uid_pos.or_else(|| config.uid_pos_for(game)).unwrap_or((0, 0));
 
   // width_from, width_to
-  let (width_from, width_to) = opt.width_from.zip(opt.width_to).unwrap_or_else(|| if op != Operation::Full {
-    (1920, 1280)
-  } else {
-    (0, 0)
-  });
+  let (width_from, width_to) =
+    opt.width_from.zip(opt.width_to).unwrap_or_else(|| if op != Operation::Full { (1920, 1280) } else { (0, 0) });
 
   MergedOption {
     crop_height,
