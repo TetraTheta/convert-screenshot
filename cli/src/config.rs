@@ -1,14 +1,17 @@
-use crate::structs::enums::{Game, Operation};
-use crate::structs::options::parse_tuple;
+use common::enums::{Game, Operation};
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+use crate::options::parse_tuple;
+
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct TomlConfig {
   general: GeneralSection,
   game: Option<GameSection>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct GeneralSection {
   folder_background: String,
   folder_center: String,
@@ -17,15 +20,18 @@ pub struct GeneralSection {
   folder_foreground2: String,
   folder_foreground3: String,
   folder_foreground4: String,
+  folder_foreground5: String,
   folder_full: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct GameSection {
   wuwa: Option<WuWaSection>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(default)]
 pub struct WuWaSection {
   crop_background_height: Option<u32>,
   crop_center_height: Option<u32>,
@@ -34,6 +40,7 @@ pub struct WuWaSection {
   crop_foreground2_height: Option<u32>,
   crop_foreground3_height: Option<u32>,
   crop_foreground4_height: Option<u32>,
+  crop_foreground5_height: Option<u32>,
   uid_area: Option<String>,
   uid_position: Option<String>,
 }
@@ -49,6 +56,7 @@ impl TomlConfig {
         folder_foreground2: "CS-Foreground-2".into(),
         folder_foreground3: "CS-Foreground-3".into(),
         folder_foreground4: "CS-Foreground-4".into(),
+        folder_foreground5: "CS-Foreground-5".into(),
         folder_full: "CS-Full".into(),
       },
       game: Some(GameSection {
@@ -60,6 +68,7 @@ impl TomlConfig {
           crop_foreground2_height: Some(505),
           crop_foreground3_height: Some(580),
           crop_foreground4_height: Some(655),
+          crop_foreground5_height: Some(730),
           uid_area: Some("144,22".into()),
           uid_position: Some("1744,1059".into()),
         }),
@@ -76,12 +85,14 @@ impl TomlConfig {
       Operation::Foreground2 => Some(self.general.folder_foreground2.clone()),
       Operation::Foreground3 => Some(self.general.folder_foreground3.clone()),
       Operation::Foreground4 => Some(self.general.folder_foreground4.clone()),
+      Operation::Foreground5 => Some(self.general.folder_foreground5.clone()),
       Operation::Full => Some(self.general.folder_full.clone()),
       _ => None,
     }
   }
 
   pub fn crop_height_for(&self, game: Game, op: Operation) -> Option<u32> {
+    // TODO: invert logic and add room for handling other games
     if game != Game::WuWa {
       return None;
     }
@@ -94,6 +105,7 @@ impl TomlConfig {
       Operation::Foreground2 => w_sec.crop_foreground2_height.clone(),
       Operation::Foreground3 => w_sec.crop_foreground3_height.clone(),
       Operation::Foreground4 => w_sec.crop_foreground4_height.clone(),
+      Operation::Foreground5 => w_sec.crop_foreground5_height.clone(),
       _ => None,
     }
   }
@@ -103,7 +115,7 @@ impl TomlConfig {
       return None;
     }
     let raw = self.game.as_ref()?.wuwa.as_ref()?.uid_area.as_ref()?;
-    parse_tuple(raw.as_str()).ok()
+    parse_tuple(raw).ok()
   }
 
   pub fn uid_pos_for(&self, game: Game) -> Option<(u32, u32)> {
@@ -112,5 +124,29 @@ impl TomlConfig {
     }
     let raw = self.game.as_ref()?.wuwa.as_ref()?.uid_position.as_ref()?;
     parse_tuple(raw).ok()
+  }
+}
+
+impl Default for TomlConfig {
+  fn default() -> Self {
+    TomlConfig::default_for()
+  }
+}
+
+impl Default for GeneralSection {
+  fn default() -> Self {
+    TomlConfig::default_for().general
+  }
+}
+
+impl Default for GameSection {
+  fn default() -> Self {
+    TomlConfig::default_for().game.unwrap()
+  }
+}
+
+impl Default for WuWaSection {
+  fn default() -> Self {
+    TomlConfig::default_for().game.unwrap().wuwa.unwrap()
   }
 }

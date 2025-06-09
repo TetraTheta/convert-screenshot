@@ -1,14 +1,19 @@
-use crate::structs::config::TomlConfig;
-use crate::structs::enums::{Game, Operation};
-use crate::structs::options::{merge_options, JobData, Options};
-use clap::Parser;
+mod config;
+mod options;
+
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
-use std::process::{exit, Command, Stdio};
+use std::process::{Command, Stdio, exit};
 use std::{env, fs};
 
-pub mod structs;
+use clap::Parser;
+use common::enums::{Game, Operation};
+use common::structs::MergedOption;
+use common::{adjust_extension, dir_has_image};
+use config::TomlConfig;
+
+use crate::options::{Options, merge_options};
 
 fn main() {
   // prepare TOML config
@@ -35,6 +40,12 @@ fn main() {
     default_config
   };
 
+  // write TOML config for empty / missing key/value
+  let toml_str = toml::to_string_pretty(&config).unwrap(); // very unlikely to error
+  if let Err(e) = fs::write(&toml_path, toml_str) {
+    eprintln!("Failed to write TOML file '{}': {}", toml_path.display(), e);
+  }
+
   // parse CLI
   let cli = Options::parse();
 
@@ -52,8 +63,8 @@ fn main() {
   if cli.operation != Operation::Full && cli.operation != Operation::CreateDirectory {
     if cli.game == Game::None {
       eprintln!(
-        "When Operation {} is specified, you must also set Game to something other than 'None'.",
-        format!("{:?}", cli.operation)
+        "When Operation {:?} is specified, you must also set Game to something other than 'None'.",
+        cli.operation
       );
       exit(1);
     }
@@ -71,6 +82,7 @@ fn main() {
         Operation::Foreground2,
         Operation::Foreground3,
         Operation::Foreground4,
+        Operation::Foreground5,
         Operation::Full,
       ] {
         if let Some(folder_name) = config.folder_name_for(op) {
@@ -94,6 +106,7 @@ fn main() {
         Operation::Foreground2,
         Operation::Foreground3,
         Operation::Foreground4,
+        Operation::Foreground5,
         Operation::Full,
       ] {
         if let Some(folder_name) = config.folder_name_for(op) {
@@ -112,17 +125,7 @@ fn main() {
         }
       }
       for mo in sub_options {
-        let jd = JobData {
-          crop_height: mo.crop_height,
-          crop_pos: mo.crop_pos,
-          operation: mo.operation,
-          target: mo.target.clone(),
-          uid_area: mo.uid_area,
-          uid_pos: mo.uid_pos,
-          width_from: mo.width_from,
-          width_to: mo.width_to,
-        };
-        run_gui(&jd);
+        run_gui(&mo);
       }
       return;
     },
@@ -134,6 +137,7 @@ fn main() {
     | Operation::Foreground2
     | Operation::Foreground3
     | Operation::Foreground4
+    | Operation::Foreground5
     | Operation::Full) => {
       let mut new_dir = None;
       if let Some(folder_name) = config.folder_name_for(op) {
@@ -159,60 +163,22 @@ fn main() {
       };
 
       let mo = merge_options(&cli, &config, &final_target, cli.game, op);
-      let jd = JobData {
-        crop_height: mo.crop_height,
-        crop_pos: mo.crop_pos,
-        operation: mo.operation,
-        target: mo.target.clone(),
-        uid_area: mo.uid_area,
-        uid_pos: mo.uid_pos,
-        width_from: mo.width_from,
-        width_to: mo.width_to,
-      };
-      run_gui(&jd);
+      run_gui(&mo);
       return;
     },
   }
 }
 
-fn dir_has_image(dir: &Path) -> bool {
-  if !dir.is_dir() {
-    return false;
-  }
-  match fs::read_dir(dir) {
-    Ok(mut entries) => entries.any(|res| {
-      if let Ok(entry) = res {
-        if let Some(ext) = entry.path().extension() {
-          let el = ext.to_string_lossy().to_lowercase();
-          return el == "jpg" || el == "jpeg" || el == "png" || el == "webp";
-        }
-      }
-      false
-    }),
-    Err(_) => false,
-  }
-}
-
-fn run_gui(jd: &JobData) {
+fn run_gui(jd: &MergedOption) {
   let bin_self = env::current_exe().expect("Could not get current exe path");
   let dir_parent = bin_self.parent().unwrap_or_else(|| Path::new("."));
-  let stem = bin_self.file_stem().and_then(|s| s.to_str()).expect("Executable file name was not valid UTF-8");
-  let expected = format!("{}-gui.exe", stem);
+  let bin_gui = dir_parent.join(adjust_extension("cs-gui")); // hard-coded GUI program name for speed
 
-  let bin_gui = fs::read_dir(dir_parent)
-    .unwrap_or_else(|e| {
-      eprintln!("Failed to read '{}': {}", dir_parent.display(), e);
-      exit(1);
-    })
-    .filter_map(Result::ok)
-    .find(|e| e.file_name().to_string_lossy().eq_ignore_ascii_case(&expected))
-    .map(|e| e.path())
-    .unwrap_or_else(|| {
-      eprintln!("Could not find any file named '{}' (case-insensitive) in '{}'.", expected, dir_parent.display());
-      exit(1);
-    });
+  if !bin_gui.exists() || !bin_gui.is_file() {
+    eprintln!("GUI program, '{}' does not exist, or is not a file.", bin_gui.display());
+    exit(1);
+  }
 
-  let json_payload = serde_json::to_string(jd).unwrap();
   let mut child = Command::new(&bin_gui)
     .stdin(Stdio::piped())
     .stdout(Stdio::inherit())
@@ -224,7 +190,7 @@ fn run_gui(jd: &JobData) {
     });
 
   if let Some(mut stdin) = child.stdin.take() {
-    stdin.write_all(json_payload.as_bytes()).unwrap_or_else(|e| {
+    serde_json::to_writer(&mut stdin, &jd).unwrap_or_else(|e| {
       eprintln!("Failed to write JSON to {} stdin: {}", bin_gui.display(), e);
     });
   }

@@ -1,9 +1,11 @@
-use crate::structs::config::TomlConfig;
-use crate::structs::enums::{CropPosition, Game, Operation};
-use clap::Parser;
-use serde::Serialize;
 use std::env;
 use std::path::{Path, PathBuf};
+
+use clap::Parser;
+use common::enums::{CropPosition, Game, Operation};
+use common::structs::MergedOption;
+
+use crate::config::TomlConfig;
 
 #[derive(Parser)]
 #[command(version, about)]
@@ -21,7 +23,8 @@ pub struct Options {
   pub game: Game,
 
   /// Operation to take on to the screenshots.
-  /// If you specify anything other than 'Full' or 'CreateDirectory', you must also set '-g|--game' to other than 'None'.
+  /// If you specify anything other than 'Full' or 'CreateDirectory', you must also set '-g|--game' to other than
+  /// 'None'.
   #[arg(short = 'o', long, value_enum, default_value_t = Operation::Full)]
   pub operation: Operation,
 
@@ -50,31 +53,6 @@ fn get_cwd() -> PathBuf {
   env::current_dir().unwrap()
 }
 
-pub struct MergedOption {
-  pub crop_height: u32,
-  pub crop_pos: CropPosition,
-  pub game: Game,
-  pub operation: Operation,
-  pub target: PathBuf,
-  pub uid_area: (u32, u32),
-  pub uid_pos: (u32, u32),
-  pub width_from: u32,
-  pub width_to: u32,
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "PascalCase")]
-pub struct JobData {
-  pub crop_height: u32,
-  pub crop_pos: CropPosition,
-  pub operation: Operation,
-  pub target: PathBuf,
-  pub uid_area: (u32, u32),
-  pub uid_pos: (u32, u32),
-  pub width_from: u32,
-  pub width_to: u32,
-}
-
 pub fn merge_options(opt: &Options, config: &TomlConfig, target: &Path, game: Game, op: Operation) -> MergedOption {
   // crop_height
   let crop_height = match op {
@@ -100,7 +78,7 @@ pub fn merge_options(opt: &Options, config: &TomlConfig, target: &Path, game: Ga
 
   // width_from, width_to
   let (width_from, width_to) =
-    opt.width_from.zip(opt.width_to).unwrap_or_else(|| if op != Operation::Full { (1920, 1280) } else { (0, 0) });
+    opt.width_from.zip(opt.width_to).unwrap_or_else(|| if game != Game::None { (1920, 1280) } else { (0, 0) });
 
   MergedOption {
     crop_height,
@@ -116,11 +94,9 @@ pub fn merge_options(opt: &Options, config: &TomlConfig, target: &Path, game: Ga
 }
 
 pub fn parse_tuple(s: &str) -> Result<(u32, u32), String> {
-  let parts: Vec<_> = s.split(",").collect();
-  if parts.len() != 2 {
-    return Err("Must be two unsigned integers separated by comma, e.g. \"144,22\"".into());
-  }
-  let a = parts[0].parse::<u32>().map_err(|_| "Failed to parse first integer".to_string())?;
-  let b = parts[1].parse::<u32>().map_err(|_| "Failed to parse second integer".to_string())?;
+  let (a_str, b_str) =
+    s.split_once(',').ok_or_else(|| "Must be two unsigned integers separated by comma, e.g. \"144,22\"")?;
+  let a = a_str.parse::<u32>().map_err(|_| "Failed to parse first integer")?;
+  let b = b_str.parse::<u32>().map_err(|_| "Failed to parse second integer")?;
   Ok((a, b))
 }

@@ -1,0 +1,17 @@
+[package]
+name = "cli"
+description = "Convert game screenshot"
+edition.workspace = true
+rust-version.workspace = true
+version.workspace = true
+
+[[bin]]
+name = "cs"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "^4.5", features = ["derive", "env", "string", "unicode", "wrap_help"] }
+common = { path = "../common", features = ["cli"] }
+serde = { version = "^1.0", features = ["derive"] }
+serde_json = "^1.0"
+toml = "^0.8"

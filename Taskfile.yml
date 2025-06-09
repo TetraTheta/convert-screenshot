@@ -4,8 +4,18 @@ version: '3'
 tasks:
   default:
     cmds:
-      - task: build:windows
-  build:windows:
+      - task: build
+  build:
     cmds:
-      - cargo build --color=always --profile release
+      - task: build:cli
+      - task: build:gui
+  build:cli:
+    cmds:
+      - cargo build --color=always --package cli --profile release
       - coreutils cp --remove-destination ./target/release/cs.exe ./.bin
+  build:gui:
+    cmds:
+      - cargo build --color=always --package gui --profile release
+      - coreutils cp --remove-destination ./target/release/cs-gui.exe ./.bin
+  format:
+    cmd: cargo +nightly fmt --all # This will install nightly toolchain, if needed :(
