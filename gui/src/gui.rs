@@ -5,7 +5,9 @@ use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
 use eframe::{App, Frame, NativeOptions, run_native};
-use egui::{CentralPanel, IconData, ProgressBar, ScrollArea, TextEdit, Vec2, ViewportBuilder};
+use egui::{
+  Align, CentralPanel, CornerRadius, IconData, Label, ProgressBar, ScrollArea, TextEdit, Vec2, ViewportBuilder,
+};
 use native_dialog::{DialogBuilder, MessageLevel};
 
 use crate::MO;
@@ -64,15 +66,25 @@ impl App for AppState {
     ctx.set_style(style);
 
     CentralPanel::default().show(ctx, |ui| {
-      ui.add_enabled(false, TextEdit::singleline(&mut self.target).desired_width(f32::INFINITY));
-      ui.label(format!("Game: {:?}, Operation: {:?}", MO.get().unwrap().game, MO.get().unwrap().operation));
-      ui.label(format!("Total: {} | Current: {}", self.total, self.current));
+      // remove '\\?\' from path
+      let mut path = self.target.clone();
+      if path.starts_with(r"\\?\") {
+        path = path[r"\\?\".len()..].to_string();
+      }
+      // TODO: find a way to prevent 'typing' in TextEdit
+      ui.add(TextEdit::singleline(&mut path).desired_width(f32::INFINITY));
+      ui.add(
+        Label::new(format!("Game: {:?}, Operation: {:?}", MO.get().unwrap().game, MO.get().unwrap().operation))
+          .selectable(false),
+      );
+      ui.add(Label::new(format!("Total: {} | Current: {}", self.total, self.current)).selectable(false));
       let fraction = self.current as f32 / self.total as f32;
-      ui.add(ProgressBar::new(fraction).text(format!("{}/{}", self.current, self.total)));
+      ui.add(ProgressBar::new(fraction).corner_radius(CornerRadius::same(4)).text(format!("{:.2}%", fraction * 100.0)));
       ScrollArea::vertical().max_width(f32::INFINITY).auto_shrink(false).show(ui, |ui| {
         for log in &self.logs {
-          ui.label(log);
+          ui.add(Label::new(log).selectable(true));
         }
+        ui.scroll_to_cursor(Some(Align::BOTTOM));
       })
     });
 

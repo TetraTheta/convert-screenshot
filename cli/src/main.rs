@@ -169,7 +169,12 @@ fn main() {
   }
 }
 
-fn run_gui(jd: &MergedOption) {
+fn run_gui(mo: &MergedOption) {
+  #[cfg(debug_assertions)]
+  {
+    println!("DEBUG: Content of MergedOption: {:#?}", mo)
+  }
+
   let bin_self = env::current_exe().expect("Could not get current exe path");
   let dir_parent = bin_self.parent().unwrap_or_else(|| Path::new("."));
   let bin_gui = dir_parent.join(adjust_extension("cs-gui")); // hard-coded GUI program name for speed
@@ -190,7 +195,7 @@ fn run_gui(jd: &MergedOption) {
     });
 
   if let Some(mut stdin) = child.stdin.take() {
-    serde_json::to_writer(&mut stdin, &jd).unwrap_or_else(|e| {
+    serde_json::to_writer(&mut stdin, &mo).unwrap_or_else(|e| {
       eprintln!("Failed to write JSON to {} stdin: {}", bin_gui.display(), e);
     });
   }
