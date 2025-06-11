@@ -6,14 +6,14 @@ use crate::enums::{CropPosition, Game, Operation};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "PascalCase")]
+// pub is required for properties
 pub struct MergedOption {
+  pub blur: Vec<[u32; 4]>,
   pub crop_height: u32,
   pub crop_pos: CropPosition,
   pub game: Game,
   pub operation: Operation,
   pub target: PathBuf,
-  pub uid_area: (u32, u32),
-  pub uid_pos: (u32, u32),
   pub width_from: u32,
   pub width_to: u32,
 }
@@ -23,7 +23,7 @@ impl MergedOption {
     if self.game == Game::None {
       return false;
     }
-    img_width == self.width_from
+    img_width == self.width_from && !self.blur.is_empty()
   }
 
   pub fn should_resize(&self, img_width: u32) -> bool {

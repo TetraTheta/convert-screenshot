@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 #[cfg_attr(feature = "cli", derive(ValueEnum))]
+#[serde(rename_all = "lowercase")]
 pub enum CropPosition {
   Bottom,
   Center,
@@ -21,6 +22,8 @@ pub enum Operation {
   Center,
   #[cfg_attr(feature = "cli", clap(aliases = ["cd"]))]
   CreateDirectory,
+  #[cfg_attr(feature = "cli", clap(aliases = ["cs"]))]
+  Cutscene,
   #[cfg_attr(feature = "cli", clap(aliases = ["f0", "fg0"]))]
   Foreground0,
   #[cfg_attr(feature = "cli", clap(aliases = ["f1", "fg1"]))]

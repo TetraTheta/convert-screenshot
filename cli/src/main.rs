@@ -31,7 +31,7 @@ fn main() {
     })
   } else {
     // create default and write it out
-    let default_config = TomlConfig::default_for();
+    let default_config = TomlConfig::default();
     let toml_str = toml::to_string(&default_config).unwrap();
     File::create(&toml_path).and_then(|mut f| f.write_all(toml_str.as_bytes())).unwrap_or_else(|e| {
       eprintln!("Failed to write default TOML file '{}': {}", toml_path.display(), e);
@@ -77,6 +77,7 @@ fn main() {
       for &op in &[
         Operation::Background,
         Operation::Center,
+        Operation::Cutscene,
         Operation::Foreground0,
         Operation::Foreground1,
         Operation::Foreground2,
@@ -85,7 +86,7 @@ fn main() {
         Operation::Foreground5,
         Operation::Full,
       ] {
-        if let Some(folder_name) = config.folder_name_for(op) {
+        if let Some(folder_name) = config.folder_name(op) {
           let dir_path = target_dir.join(folder_name);
           if let Err(e) = fs::create_dir_all(&dir_path) {
             eprintln!("Failed to create directory '{}': {}", dir_path.display(), e);
@@ -101,6 +102,7 @@ fn main() {
       for &op in &[
         Operation::Background,
         Operation::Center,
+        Operation::Cutscene,
         Operation::Foreground0,
         Operation::Foreground1,
         Operation::Foreground2,
@@ -109,7 +111,7 @@ fn main() {
         Operation::Foreground5,
         Operation::Full,
       ] {
-        if let Some(folder_name) = config.folder_name_for(op) {
+        if let Some(folder_name) = config.folder_name(op) {
           let sub_target = target_dir.join(folder_name);
           if !sub_target.exists() {
             continue;
@@ -132,6 +134,7 @@ fn main() {
     // others
     op @ (Operation::Background
     | Operation::Center
+    | Operation::Cutscene
     | Operation::Foreground0
     | Operation::Foreground1
     | Operation::Foreground2
@@ -140,7 +143,7 @@ fn main() {
     | Operation::Foreground5
     | Operation::Full) => {
       let mut new_dir = None;
-      if let Some(folder_name) = config.folder_name_for(op) {
+      if let Some(folder_name) = config.folder_name(op) {
         let dir1 = target_dir.join(folder_name);
         if dir1.exists() && dir_has_image(&dir1) {
           new_dir = Some(dir1);
@@ -157,7 +160,7 @@ fn main() {
         eprintln!(
           "No image files were found in '{}' or its '{}' directory.",
           target_dir.display(),
-          config.folder_name_for(op).unwrap_or("<unknown>".to_string())
+          config.folder_name(op).unwrap_or("<unknown>".to_string())
         );
         exit(1);
       };

@@ -17,7 +17,7 @@ use crate::image::process_image;
 static MO: OnceLock<MergedOption> = OnceLock::new();
 
 fn main() {
-  // parse JSON data to JobData
+  // parse JSON data
   let mut input = String::new();
   if stdin().read_to_string(&mut input).unwrap_or(0) == 0 {
     // no input
@@ -25,7 +25,7 @@ fn main() {
     exit(1);
   }
 
-  // parse MergedOption
+  // parse to MergedOption
   let mo: MergedOption = match serde_json::from_str(&input) {
     Ok(v) => v,
     Err(e) => {
