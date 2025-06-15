@@ -4,9 +4,10 @@ use std::sync::Arc;
 use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
-use eframe::{App, Frame, NativeOptions, run_native};
+use eframe::{App, CreationContext, Frame, NativeOptions, run_native};
 use egui::{
-  Align, CentralPanel, CornerRadius, IconData, Label, ProgressBar, ScrollArea, TextEdit, Vec2, ViewportBuilder,
+  Align, CentralPanel, Context, CornerRadius, FontData, FontDefinitions, FontFamily, IconData, Label, ProgressBar,
+  ScrollArea, TextEdit, Vec2, ViewportBuilder,
 };
 use native_dialog::{DialogBuilder, MessageLevel};
 
@@ -24,17 +25,21 @@ struct AppState {
   current: usize,
   current_file: String,
   logs: Vec<String>,
+  output: String,
   rx: Receiver<ImageMsg>,
   target: String,
   total: usize,
 }
 
 impl AppState {
-  fn new(target_list: Vec<PathBuf>, rx: Receiver<ImageMsg>) -> Self {
+  fn new(cc: &CreationContext<'_>, target_list: Vec<PathBuf>, out_dir: PathBuf, rx: Receiver<ImageMsg>) -> Self {
     let total = target_list.len();
     let target = target_list[0].parent().unwrap().to_string_lossy().to_string();
+    let output = out_dir.to_string_lossy().to_string();
 
-    Self { abort: false, current: 0, current_file: String::new(), logs: Vec::new(), rx, target, total }
+    set_font(&cc.egui_ctx);
+
+    Self { abort: false, current: 0, current_file: String::new(), logs: Vec::new(), output, rx, target, total }
   }
 }
 
@@ -60,19 +65,22 @@ impl App for AppState {
     }
 
     // set margin
-    // TODO: find a way to use font with CJK character, without embedding it
     let mut style = (*ctx.style()).clone();
     style.spacing.item_spacing = Vec2::new(10.0, 10.0);
     ctx.set_style(style);
 
     CentralPanel::default().show(ctx, |ui| {
-      // remove '\\?\' from path
-      let mut path = self.target.clone();
-      if path.starts_with(r"\\?\") {
-        path = path[r"\\?\".len()..].to_string();
-      }
+      let mut from = remove_unc(self.target.clone());
+      let mut to = remove_unc(self.output.clone());
       // TODO: find a way to prevent 'typing' in TextEdit
-      ui.add(TextEdit::singleline(&mut path).desired_width(f32::INFINITY));
+      ui.horizontal(|ui| {
+        ui.label("From: ");
+        ui.add(TextEdit::singleline(&mut from).desired_width(f32::INFINITY));
+      });
+      ui.horizontal(|ui| {
+        ui.label("To:   ");
+        ui.add(TextEdit::singleline(&mut to).desired_width(f32::INFINITY));
+      });
       ui.add(
         Label::new(format!("Game: {:?}, Operation: {:?}", MO.get().unwrap().game, MO.get().unwrap().operation))
           .selectable(false),
@@ -109,7 +117,12 @@ fn load_icon() -> IconData {
   IconData { rgba: img.into_raw(), width: w, height: h }
 }
 
-pub fn run_gui(list: Vec<PathBuf>, rx: Receiver<ImageMsg>) {
+fn remove_unc(s: String) -> String {
+  let c = s.clone();
+  if c.starts_with(r"\\?\") { c[r"\\?\".len()..].to_string() } else { c }
+}
+
+pub fn run_gui(list: Vec<PathBuf>, out_dir: PathBuf, rx: Receiver<ImageMsg>) {
   let icon = Arc::new(load_icon());
   let opt = NativeOptions {
     viewport: ViewportBuilder {
@@ -128,6 +141,20 @@ pub fn run_gui(list: Vec<PathBuf>, rx: Receiver<ImageMsg>) {
     ..Default::default()
   };
 
-  run_native("ConvertScreenshot", opt, Box::new(move |_cc| Ok(Box::new(AppState::new(list, rx)))))
+  run_native("ConvertScreenshot", opt, Box::new(move |cc| Ok(Box::new(AppState::new(cc, list, out_dir, rx)))))
     .expect("Failed to open GUI");
+}
+
+fn set_font(ctx: &Context) {
+  let mut fonts = FontDefinitions::empty();
+
+  fonts.font_data.insert(
+    "sarasa-ui-k".to_owned(),
+    Arc::new(FontData::from_static(include_bytes!("../assets/saarasa-ui-k-regular-subset.ttf"))),
+  );
+
+  fonts.families.entry(FontFamily::Proportional).or_default().insert(0, "sarasa-ui-k".to_owned());
+  fonts.families.entry(FontFamily::Monospace).or_default().insert(0, "sarasa-ui-k".to_owned());
+
+  ctx.set_fonts(fonts);
 }

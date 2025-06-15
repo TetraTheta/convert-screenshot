@@ -122,7 +122,7 @@ fn main() {
             continue;
           }
 
-          let eff = merge_options(&cli, &config, &sub_target, cli.game, op);
+          let eff = merge_options(&cli, &config, &sub_target, cli.game, op, true);
           sub_options.push(eff);
         }
       }
@@ -165,7 +165,7 @@ fn main() {
         exit(1);
       };
 
-      let mo = merge_options(&cli, &config, &final_target, cli.game, op);
+      let mo = merge_options(&cli, &config, &final_target, cli.game, op, false);
       run_gui(&mo);
       return;
     },

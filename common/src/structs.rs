@@ -12,6 +12,7 @@ pub struct MergedOption {
   pub crop_height: u32,
   pub crop_pos: CropPosition,
   pub game: Game,
+  pub save_at_parent: bool,
   pub operation: Operation,
   pub target: PathBuf,
   pub width_from: u32,

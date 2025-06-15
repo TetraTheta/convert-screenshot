@@ -49,7 +49,14 @@ fn get_cwd() -> PathBuf {
   env::current_dir().unwrap()
 }
 
-pub fn merge_options(opt: &Options, config: &TomlConfig, target: &Path, game: Game, op: Operation) -> MergedOption {
+pub fn merge_options(
+  opt: &Options,
+  config: &TomlConfig,
+  target: &Path,
+  game: Game,
+  op: Operation,
+  save_at_parent: bool,
+) -> MergedOption {
   // blur
   let blur = opt.blur.clone().unwrap_or_else(|| config.blur(game, op));
 
@@ -73,7 +80,17 @@ pub fn merge_options(opt: &Options, config: &TomlConfig, target: &Path, game: Ga
   let (width_from, width_to) =
     opt.width_from.zip(opt.width_to).unwrap_or_else(|| if game != Game::None { (1920, 1280) } else { (0, 0) });
 
-  MergedOption { blur, crop_height, crop_pos, game, operation: op, target: target.to_path_buf(), width_from, width_to }
+  MergedOption {
+    blur,
+    crop_height,
+    crop_pos,
+    game,
+    save_at_parent,
+    operation: op,
+    target: target.to_path_buf(),
+    width_from,
+    width_to,
+  }
 }
 
 pub fn parse_tuple(s: &str) -> Result<[u32; 4], String> {

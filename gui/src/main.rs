@@ -3,7 +3,9 @@
 mod gui;
 mod image;
 
+use std::fs::create_dir_all;
 use std::io::{Read, stdin};
+use std::path::PathBuf;
 use std::process::exit;
 use std::sync::{OnceLock, mpsc};
 use std::thread;
@@ -15,6 +17,22 @@ use crate::gui::{error_message, run_gui};
 use crate::image::process_image;
 
 static MO: OnceLock<MergedOption> = OnceLock::new();
+
+fn output_dir(mo: &MergedOption) -> PathBuf {
+  let target = &mo.target;
+  let candidate = if mo.save_at_parent {
+    target.parent().and_then(|p| if p.parent().is_some() { Some(p.to_path_buf()) } else { None }).unwrap_or_else(|| {
+      let mut s = target.clone();
+      s.set_file_name(format!("{}-converted", target.file_name().unwrap().to_string_lossy()));
+      s
+    })
+  } else {
+    target.join("converted")
+  };
+
+  create_dir_all(&candidate).ok();
+  candidate
+}
 
 fn main() {
   // parse JSON data
@@ -43,13 +61,16 @@ fn main() {
     exit(1);
   }
 
+  let out_dir = output_dir(&mo);
+  let out_dir_c = out_dir.clone();
+
   // spawn image processing thread
   let imgs_2 = imgs.clone();
   let (tx, rx) = mpsc::channel();
   thread::spawn(move || {
-    process_image(imgs_2, &mo, tx);
+    process_image(imgs_2, &mo, out_dir, tx);
   });
 
   // spawn GUI and pass receiver
-  run_gui(imgs, rx);
+  run_gui(imgs, out_dir_c, rx);
 }

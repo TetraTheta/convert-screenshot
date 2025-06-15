@@ -15,15 +15,12 @@ use crate::gui::ImageMsg;
 
 const BLUR_PARAMS: BoxBlurParameters = BoxBlurParameters { x_axis_kernel: 45, y_axis_kernel: 45 };
 
-pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, tx: Sender<ImageMsg>) {
+pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, out_dir: PathBuf, tx: Sender<ImageMsg>) {
   let total = images.len();
 
   // only used for blur at the outside of loop
   let mut tmp_src = Vec::new();
   let mut tmp_dst = Vec::new();
-
-  // create output directory only once
-  let mut out_dir: Option<PathBuf> = None;
 
   for (i, f) in images.iter().enumerate() {
     let filename = f.file_name().unwrap().to_string_lossy().to_string();
@@ -97,13 +94,7 @@ pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, tx: Sender<ImageMs
     let webp = Encoder::from_image(&img).unwrap().encode(85.0);
 
     // save
-    // I don't think using 'unwrap()' will cause problem in here
-    let dir = out_dir.get_or_insert_with(|| {
-      let d = f.parent().unwrap().join("converted");
-      fs::create_dir_all(&d).ok();
-      d
-    });
-    let dst = dir.join(f.with_extension("webp").file_name().unwrap());
+    let dst = out_dir.join(f.file_stem().unwrap()).with_extension("webp");
     if let Err(e) = fs::write(&dst, &*webp) {
       tx.send(ImageMsg::Error { text: format!("Failed to write '{}': {}", dst.display(), e) })
         .expect("Failed to send error message");
