@@ -150,7 +150,7 @@ fn set_font(ctx: &Context) {
 
   fonts.font_data.insert(
     "sarasa-ui-k".to_owned(),
-    Arc::new(FontData::from_static(include_bytes!("../assets/saarasa-ui-k-regular-subset.ttf"))),
+    Arc::new(FontData::from_static(include_bytes!("../assets/saarasa-ui-k-regular-subset.otf"))),
   );
 
   fonts.families.entry(FontFamily::Proportional).or_default().insert(0, "sarasa-ui-k".to_owned());
