@@ -39,7 +39,7 @@ fn main() {
   let mut input = String::new();
   if stdin().read_to_string(&mut input).unwrap_or(0) == 0 {
     // no input
-    let _ = error_message("No JSON input were found.".to_string());
+    error_message("No JSON input were found.".to_string());
     exit(1);
   }
 
@@ -47,7 +47,7 @@ fn main() {
   let mo: MergedOption = match serde_json::from_str(&input) {
     Ok(v) => v,
     Err(e) => {
-      let _ = error_message(format!("Failed to parse JSON data:\n{}", e));
+      error_message(format!("Failed to parse JSON data:\n{}", e));
       exit(1);
     },
   };
@@ -57,7 +57,7 @@ fn main() {
   // get image file list
   let imgs = dir_collect_image(&mo.target.to_path_buf());
   if imgs.is_empty() {
-    let _ = error_message(format!("There is no image file in '{:?}'", &mo.target));
+    error_message(format!("There is no image file in '{:?}'", &mo.target));
     exit(1);
   }
 
@@ -72,5 +72,8 @@ fn main() {
   });
 
   // spawn GUI and pass receiver
-  run_gui(imgs, out_dir_c, rx);
+  if let Err(e) = run_gui(imgs, out_dir_c, rx) {
+    error_message(format!("GUI error: {}", e));
+    exit(1);
+  }
 }

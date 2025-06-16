@@ -16,18 +16,22 @@ tasks:
   build:cli:
     cmds:
       - cargo build --color=always --package cli --profile release
+      - coreutils mkdir -p ".bin"
       - coreutils cp --remove-destination ./target/release/cs.exe ./.bin
   build:cli:dev:
     cmds:
       - cargo build --color=always --package cli --profile dev
+      - coreutils mkdir -p ".bin"
       - coreutils cp --remove-destination ./target/debug/cs.exe ./.bin
   build:gui:
     cmds:
       - cargo build --color=always --package gui --profile release
+      - coreutils mkdir -p ".bin"
       - coreutils cp --remove-destination ./target/release/cs-gui.exe ./.bin
   build:gui:dev:
     cmds:
       - cargo build --color=always --package gui --profile dev
+      - coreutils mkdir -p ".bin"
       - coreutils cp --remove-destination ./target/debug/cs-gui.exe ./.bin
   format:
     cmd: cargo +nightly fmt --all # This will install nightly toolchain, if needed :(

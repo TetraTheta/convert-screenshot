@@ -118,11 +118,11 @@ fn load_icon() -> IconData {
 }
 
 fn remove_unc(s: String) -> String {
-  let c = s.clone();
-  if c.starts_with(r"\\?\") { c[r"\\?\".len()..].to_string() } else { c }
+  const PREFIX: &str = r"\\?\";
+  if s.starts_with(PREFIX) { (&s[PREFIX.len()..]).parse().unwrap() } else { s }
 }
 
-pub fn run_gui(list: Vec<PathBuf>, out_dir: PathBuf, rx: Receiver<ImageMsg>) {
+pub fn run_gui(list: Vec<PathBuf>, out_dir: PathBuf, rx: Receiver<ImageMsg>) -> Result<(), eframe::Error> {
   let icon = Arc::new(load_icon());
   let opt = NativeOptions {
     viewport: ViewportBuilder {
@@ -142,5 +142,4 @@ pub fn run_gui(list: Vec<PathBuf>, out_dir: PathBuf, rx: Receiver<ImageMsg>) {
   };
 
   run_native("ConvertScreenshot", opt, Box::new(move |cc| Ok(Box::new(AppState::new(cc, list, out_dir, rx)))))
-    .expect("Failed to open GUI");
 }
