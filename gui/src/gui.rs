@@ -138,6 +138,7 @@ pub fn run_gui(list: Vec<PathBuf>, out_dir: PathBuf, rx: Receiver<ImageMsg>) -> 
       title: Some("ConvertScreenshot".to_string()),
       ..Default::default()
     },
+    centered: true,
     ..Default::default()
   };
 
