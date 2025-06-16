@@ -1,13 +1,21 @@
 [package]
 name = "cli"
 description = "Convert game screenshot"
+build = "build.rs"
 edition.workspace = true
 rust-version.workspace = true
 version.workspace = true
 
+[package.metadata.winresource]
+FileDescription = "ConvertScreenshotCLI"
+ProductName = "ConvertScreenshotCLI"
+
 [[bin]]
 name = "cs"
 path = "src/main.rs"
+
+[build-dependencies]
+winresource.workspace = true
 
 [dependencies]
 clap = { version = "^4.5", features = ["derive", "env", "string", "unicode", "wrap_help"] }

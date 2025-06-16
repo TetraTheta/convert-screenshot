@@ -1,20 +1,29 @@
 [package]
 name = "gui"
 description = "Convert game screenshot"
+build = "build.rs"
 edition.workspace = true
 rust-version.workspace = true
 version.workspace = true
+
+[package.metadata.winresource]
+FileDescription = "ConvertScreenshotGUI"
+ProductName = "ConvertScreenshotGUI"
 
 [[bin]]
 name = "cs-gui"
 path = "src/main.rs"
 
+[build-dependencies]
+winresource.workspace = true
+
 [dependencies]
 common = { path = "../common" }
 eframe = "^0.31"
-image = "^0.25"
 egui = { version = "^0.31", default-features = false }
+egui-font = { git = "https://github.com/TetraTheta/egui-font.git", branch = "main" }
+image = "^0.25"
+libblur = "^0.19"
+native-dialog = { version = "^0.9", features = ["windows_dpi_awareness", "windows_visual_styles"] }
 serde_json = "1.0.140"
 webp = "^0.3"
-native-dialog = { version = "^0.9", features = ["windows_dpi_awareness", "windows_visual_styles"] }
-libblur = "^0.19"

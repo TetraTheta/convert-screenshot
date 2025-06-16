@@ -6,9 +6,9 @@ use std::time::Duration;
 
 use eframe::{App, CreationContext, Frame, NativeOptions, run_native};
 use egui::{
-  Align, CentralPanel, Context, CornerRadius, FontData, FontDefinitions, FontFamily, IconData, Label, ProgressBar,
-  ScrollArea, TextEdit, Vec2, ViewportBuilder,
+  Align, CentralPanel, CornerRadius, IconData, Label, ProgressBar, ScrollArea, TextEdit, Vec2, ViewportBuilder,
 };
+use egui_font::set_font;
 use native_dialog::{DialogBuilder, MessageLevel};
 
 use crate::MO;
@@ -111,7 +111,7 @@ pub fn error_message(s: String) {
 }
 
 fn load_icon() -> IconData {
-  let icon = include_bytes!("../assets/icon.png");
+  let icon = include_bytes!("../assets/convert-screenshot-gui.png");
   let img = image::load_from_memory(icon).expect("Failed to load icon").to_rgba8();
   let (w, h) = img.dimensions();
   IconData { rgba: img.into_raw(), width: w, height: h }
@@ -143,18 +143,4 @@ pub fn run_gui(list: Vec<PathBuf>, out_dir: PathBuf, rx: Receiver<ImageMsg>) {
 
   run_native("ConvertScreenshot", opt, Box::new(move |cc| Ok(Box::new(AppState::new(cc, list, out_dir, rx)))))
     .expect("Failed to open GUI");
-}
-
-fn set_font(ctx: &Context) {
-  let mut fonts = FontDefinitions::empty();
-
-  fonts.font_data.insert(
-    "sarasa-ui-k".to_owned(),
-    Arc::new(FontData::from_static(include_bytes!("../assets/saarasa-ui-k-regular-subset.otf"))),
-  );
-
-  fonts.families.entry(FontFamily::Proportional).or_default().insert(0, "sarasa-ui-k".to_owned());
-  fonts.families.entry(FontFamily::Monospace).or_default().insert(0, "sarasa-ui-k".to_owned());
-
-  ctx.set_fonts(fonts);
 }
