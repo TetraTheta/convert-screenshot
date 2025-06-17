@@ -5,6 +5,8 @@ use std::sync::mpsc::Receiver;
 use std::time::Duration;
 
 use eframe::{App, CreationContext, Frame, NativeOptions, run_native};
+use egui::text::CCursor;
+use egui::text_selection::CCursorRange;
 use egui::{
   Align, CentralPanel, CornerRadius, IconData, Label, ProgressBar, ScrollArea, TextEdit, Vec2, ViewportBuilder,
 };
@@ -20,7 +22,7 @@ pub enum ImageMsg {
   Progress { current: usize, total: usize, filename: String },
 }
 
-struct AppState {
+struct CSGuiState {
   abort: bool,
   current: usize,
   current_file: String,
@@ -29,9 +31,10 @@ struct AppState {
   rx: Receiver<ImageMsg>,
   target: String,
   total: usize,
+  autofocused: bool,
 }
 
-impl AppState {
+impl CSGuiState {
   fn new(cc: &CreationContext<'_>, target_list: Vec<PathBuf>, out_dir: PathBuf, rx: Receiver<ImageMsg>) -> Self {
     let total = target_list.len();
     let target = target_list[0].parent().unwrap().to_string_lossy().to_string();
@@ -39,11 +42,21 @@ impl AppState {
 
     set_font(&cc.egui_ctx);
 
-    Self { abort: false, current: 0, current_file: String::new(), logs: Vec::new(), output, rx, target, total }
+    Self {
+      abort: false,
+      current: 0,
+      current_file: String::new(),
+      logs: Vec::new(),
+      output,
+      rx,
+      target,
+      total,
+      autofocused: false,
+    }
   }
 }
 
-impl App for AppState {
+impl App for CSGuiState {
   fn update(&mut self, ctx: &egui::Context, _frame: &mut Frame) {
     while let Ok(msg) = self.rx.try_recv() {
       match msg {
@@ -75,11 +88,26 @@ impl App for AppState {
       // TODO: find a way to prevent 'typing' in TextEdit
       ui.horizontal(|ui| {
         ui.label("From: ");
-        ui.add(TextEdit::singleline(&mut from).desired_width(f32::INFINITY));
+        let mut from_edit = TextEdit::singleline(&mut from).desired_width(f32::INFINITY).auto_scroll(true).show(ui);
+        let resp = from_edit.response;
+        if !self.autofocused {
+          from_edit
+            .state
+            .cursor
+            .set_char_range(Some(CCursorRange::two(CCursor::new(from.len()), CCursor::new(from.len()))));
+          // do not set `autofocused` to `true` yet
+          from_edit.state.store(ui.ctx(), resp.id);
+        }
       });
       ui.horizontal(|ui| {
         ui.label("To:   ");
-        ui.add(TextEdit::singleline(&mut to).desired_width(f32::INFINITY));
+        let mut to_edit = TextEdit::singleline(&mut to).desired_width(f32::INFINITY).auto_scroll(true).show(ui);
+        let resp = to_edit.response;
+        if !self.autofocused {
+          to_edit.state.cursor.set_char_range(Some(CCursorRange::two(CCursor::new(to.len()), CCursor::new(to.len()))));
+          to_edit.state.store(ui.ctx(), resp.id);
+          self.autofocused = true;
+        }
       });
       ui.add(
         Label::new(format!("Game: {:?}, Operation: {:?}", MO.get().unwrap().game, MO.get().unwrap().operation))
@@ -100,8 +128,8 @@ impl App for AppState {
       exit(1)
     }
 
-    // update UI in every 100ms
-    // this is mandatory to prevent ui update or app close only happen when the app is focused
+    // update UI as 10FPS
+    // without this, the UI update or app close will only happen when the app has 'focus' (mouse hover)
     ctx.request_repaint_after(Duration::from_millis(100));
   }
 }
@@ -142,5 +170,5 @@ pub fn run_gui(list: Vec<PathBuf>, out_dir: PathBuf, rx: Receiver<ImageMsg>) -> 
     ..Default::default()
   };
 
-  run_native("ConvertScreenshot", opt, Box::new(move |cc| Ok(Box::new(AppState::new(cc, list, out_dir, rx)))))
+  run_native("ConvertScreenshot", opt, Box::new(move |cc| Ok(Box::new(CSGuiState::new(cc, list, out_dir, rx)))))
 }

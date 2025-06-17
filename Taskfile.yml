@@ -4,6 +4,7 @@ version: '3'
 tasks:
   default:
     cmds:
+      - task: format
       - task: build
   build:
     cmds:

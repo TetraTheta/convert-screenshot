@@ -1,3 +1,9 @@
+[patch.crates-io]
+eframe = { git = "https://github.com/TetraTheta/egui.git", branch = "offset-test" }
+egui = { git = "https://github.com/TetraTheta/egui.git", branch = "offset-test" }
+egui-winit = { git = "https://github.com/TetraTheta/egui.git", branch = "offset-test" }
+egui_glow = { git = "https://github.com/TetraTheta/egui.git", branch = "offset-test" }
+
 [workspace]
 members = [
   "cli",
