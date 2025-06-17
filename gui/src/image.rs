@@ -9,7 +9,7 @@ use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use libblur::FastBlurChannels::Channels4;
 use libblur::ThreadingPolicy::Single;
 use libblur::{BlurImage, BlurImageMut, BoxBlurParameters, BufferStore, box_blur};
-use webp::Encoder;
+use webp::{Encoder, WebPConfig};
 
 use crate::gui::ImageMsg;
 
@@ -90,8 +90,19 @@ pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, out_dir: PathBuf, 
       }
     };
 
-    // encode to webp
-    let webp = Encoder::from_image(&img).unwrap().encode(85.0);
+    // manually create WebPConfig with the value of PICTURE preset
+    let mut config = WebPConfig::new().unwrap();
+    config.quality = 85.0;
+    config.sns_strength = 80; // PICTURE
+    config.filter_sharpness = 4; // PICTURE
+    config.filter_strength = 35;
+    config.preprocessing = 2;
+    config.method = 6;
+    config.thread_level = 1;
+    config.pass = 4;
+
+    // encode to webp with config
+    let webp = Encoder::from_image(&img).unwrap().encode_advanced(&config).unwrap();
 
     // save
     let dst = out_dir.join(f.file_stem().unwrap()).with_extension("webp");
