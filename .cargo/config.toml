@@ -1,2 +1,2 @@
 [build]
-rustflags = ["-C", "link-arg=-fuse-ld=lld"]
+rustflags = ["-Zlocation-detail=none"] # "-Zfmt-debug=none" must not be used for RC compiling

@@ -3,7 +3,6 @@ name = "cli"
 description = "Convert game screenshot"
 build = "build.rs"
 edition.workspace = true
-rust-version.workspace = true
 version.workspace = true
 
 [package.metadata.winresource]
@@ -14,12 +13,12 @@ ProductName = "ConvertScreenshotCLI"
 name = "cs"
 path = "src/main.rs"
 
-[build-dependencies]
+[target.'cfg(windows)'.build-dependencies]
 winresource.workspace = true
 
 [dependencies]
-clap = { version = "^4.5", features = ["derive", "env", "string", "unicode", "wrap_help"] }
+clap.workspace = true
 common = { path = "../common", features = ["cli"] }
-serde = { version = "^1.0", features = ["derive"] }
-serde_json = "^1.0"
-toml = "^0.8"
+serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true

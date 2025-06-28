@@ -1,9 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
-use std::sync::mpsc::Sender;
 
 use common::enums::{CropPosition, Game, Operation};
 use common::structs::MergedOption;
+use fltk::app::Sender;
 use image::imageops::{Lanczos3, overlay, resize};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use libblur::FastBlurChannels::Channels4;
@@ -15,7 +15,7 @@ use crate::gui::ImageMsg;
 
 const BLUR_PARAMS: BoxBlurParameters = BoxBlurParameters { x_axis_kernel: 45, y_axis_kernel: 45 };
 
-pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, out_dir: PathBuf, tx: Sender<ImageMsg>) {
+pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, out_dir: PathBuf, s: Sender<ImageMsg>) {
   let total = images.len();
 
   // only used for blur at the outside of loop
@@ -24,14 +24,13 @@ pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, out_dir: PathBuf, 
 
   for (i, f) in images.iter().enumerate() {
     let filename = f.file_name().unwrap().to_string_lossy().to_string();
-    tx.send(ImageMsg::Progress { current: i + 1, total, filename: filename.clone() }).ok();
+    s.send(ImageMsg::Progress { current: i + 1, total, filename: filename.clone() });
 
     // load image
     let mut img = match image::open(f) {
       Ok(i) => i,
       Err(e) => {
-        tx.send(ImageMsg::Error { text: format!("Failed to open '{}': {}", f.display(), e) })
-          .expect("Failed to send error message");
+        s.send(ImageMsg::Error { text: format!("Failed to open '{}': {}", f.display(), e) });
         // silently skip to next image
         continue;
       },
@@ -41,8 +40,7 @@ pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, out_dir: PathBuf, 
       let (w, h) = img.dimensions();
 
       if mo.operation != Operation::Full && w != mo.width_from {
-        tx.send(ImageMsg::Error { text: format!("Expected width is {} but got {}: {}", mo.width_from, w, filename) })
-          .expect("Failed to send error message");
+        s.send(ImageMsg::Error { text: format!("Expected width is {} but got {}: {}", mo.width_from, w, filename) });
         // silently skip to next image
         continue;
       }
@@ -92,14 +90,14 @@ pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, out_dir: PathBuf, 
 
     // manually create WebPConfig with the value of PICTURE preset
     let mut config = WebPConfig::new().unwrap();
-    config.quality = 85.0;
-    config.sns_strength = 80; // PICTURE
-    config.filter_sharpness = 4; // PICTURE
-    config.filter_strength = 35;
-    config.preprocessing = 2;
-    config.method = 6;
-    config.thread_level = 1;
-    config.pass = 4;
+    config.quality = 85.0; // between 0 and 100. For lossy, 0 gives the smallest size and 100 the largest.
+    config.sns_strength = 80; // Spatial Noise Shaping. 0=off, 100=maximum. (PICTURE)
+    config.filter_sharpness = 4; // range: [0 = off .. 7 = least sharp] (PICTURE)
+    config.filter_strength = 35; // range: [0 = off .. 100 = strongest] (PICTURE)
+    config.preprocessing = 2; // preprocessing filter: 0=none, 1=segment-smooth, 2=pseudo-random dithering (PICTURE)
+    config.method = 6; // quality/speed trade-off (0=fast, 6=slower-better)
+    config.thread_level = 1; // If non-zero, try and use multi-threaded encoding.
+    config.pass = 4; // number of entropy-analysis passes (in [1..10]).
 
     // encode to webp with config
     let webp = Encoder::from_image(&img).unwrap().encode_advanced(&config).unwrap();
@@ -107,13 +105,12 @@ pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, out_dir: PathBuf, 
     // save
     let dst = out_dir.join(f.file_stem().unwrap()).with_extension("webp");
     if let Err(e) = fs::write(&dst, &*webp) {
-      tx.send(ImageMsg::Error { text: format!("Failed to write '{}': {}", dst.display(), e) })
-        .expect("Failed to send error message");
+      s.send(ImageMsg::Error { text: format!("Failed to write '{}': {}", dst.display(), e) });
       // silently skip to next image
       continue;
     }
-    tx.send(ImageMsg::Done { filename }).ok();
+    s.send(ImageMsg::Done { filename });
   }
 
-  tx.send(ImageMsg::Finished).ok();
+  s.send(ImageMsg::Finished);
 }
