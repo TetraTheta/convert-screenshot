@@ -164,7 +164,7 @@ impl Default for WuWaSection {
         blur: vec![[40, 1054, 330, 22], [1733, 1058, 140, 22]],
       },
       center: LayerConfig { crop_height: 200, crop_position: CropPosition::Center, blur: Vec::new() },
-      cutscene: LayerConfig { crop_height: 810, crop_position: CropPosition::Center, blur: vec![[1781, 929, 110, 16]] },
+      cutscene: LayerConfig { crop_height: 810, crop_position: CropPosition::Center, blur: vec![[1781, 927, 110, 16]] },
       foreground0: LayerConfig {
         crop_height: 310,
         crop_position: CropPosition::Bottom,
