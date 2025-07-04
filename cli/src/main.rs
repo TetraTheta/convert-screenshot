@@ -12,8 +12,32 @@ use common::enums::{Game, Operation};
 use common::structs::MergedOption;
 use common::{adjust_extension, dir_has_image};
 use config::TomlConfig;
+use regex::Regex;
 
 use crate::options::{Options, merge_options};
+
+fn collapse_array(s: String) -> String {
+  let re = Regex::new(r"(?m)^(\s*blur\s*=\s*)\[\s*(?P<inner>(?:\[[^]]*]\s*,?\s*\n?)+)\s*]").unwrap();
+  re.replace_all(&s, |caps: &regex::Captures| {
+    let prefix = &caps[1];
+    let inner_block = &caps["inner"];
+    let inner_re = Regex::new(r"\[\s*([^]]+?)\s*]").unwrap();
+    let arrays: Vec<String> = inner_re
+      .captures_iter(inner_block)
+      .map(|m| {
+        m[1]
+          .lines()
+          .flat_map(|l| l.trim().trim_end_matches(",").split(",").map(str::trim))
+          .filter(|s| !s.is_empty())
+          .collect::<Vec<_>>()
+          .join(", ")
+      })
+      .collect();
+    let joined = arrays.into_iter().map(|a| format!("[{}]", a)).collect::<Vec<_>>().join(", ");
+    format!("{}[{}]", prefix, joined)
+  })
+  .to_string()
+}
 
 fn main() {
   // prepare TOML config
@@ -32,8 +56,10 @@ fn main() {
   } else {
     // create default and write it out
     let default_config = TomlConfig::default();
-    let toml_str = toml::to_string(&default_config).unwrap();
-    File::create(&toml_path).and_then(|mut f| f.write_all(toml_str.as_bytes())).unwrap_or_else(|e| {
+    let toml_string = toml::to_string(&default_config).unwrap();
+    // collapse 'blur'
+    let toml_content = collapse_array(toml_string);
+    File::create(&toml_path).and_then(|mut f| f.write_all(toml_content.as_bytes())).unwrap_or_else(|e| {
       eprintln!("Failed to write default TOML file '{}': {}", toml_path.display(), e);
       exit(1);
     });
@@ -41,8 +67,10 @@ fn main() {
   };
 
   // write TOML config for empty / missing key/value
-  let toml_str = toml::to_string_pretty(&config).unwrap(); // very unlikely to error
-  if let Err(e) = fs::write(&toml_path, toml_str) {
+  let toml_string = toml::to_string_pretty(&config).unwrap(); // very unlikely to error
+  // collapse 'blur'
+  let toml_content = collapse_array(toml_string);
+  if let Err(e) = fs::write(&toml_path, toml_content) {
     eprintln!("Failed to write TOML file '{}': {}", toml_path.display(), e);
   }
 

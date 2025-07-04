@@ -19,6 +19,7 @@ winresource.workspace = true
 [dependencies]
 clap.workspace = true
 common = { path = "../common", features = ["cli"] }
+regex.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 toml.workspace = true
