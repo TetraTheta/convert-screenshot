@@ -8,12 +8,12 @@ use crate::enums::{CropPosition, Game, Operation};
 #[serde(rename_all = "PascalCase")]
 // pub is required for properties
 pub struct MergedOption {
+  pub operation: Operation,
+  pub game: Game,
   pub blur: Vec<[u32; 4]>,
   pub crop_height: u32,
   pub crop_pos: CropPosition,
-  pub game: Game,
   pub save_at_parent: bool,
-  pub operation: Operation,
   pub target: PathBuf,
   pub width_from: u32,
   pub width_to: u32,

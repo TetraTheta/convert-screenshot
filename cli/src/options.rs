@@ -10,38 +10,38 @@ use crate::config::TomlConfig;
 #[derive(Parser)]
 #[command(version, about)]
 pub struct Options {
-  /// Manual override: Area for blur, as 'x,y,width,height'
-  #[arg(long, value_parser = parse_tuple)]
-  pub blur: Option<Vec<[u32; 4]>>,
-
-  /// Manual override: crop height in pixel
-  #[arg(long)]
-  pub crop_height: Option<u32>,
-
-  /// Manual override: crop position
-  #[arg(long, value_enum)]
-  pub crop_pos: Option<CropPosition>,
-
-  /// Game that the screenshots are taken from
-  #[arg(short = 'g', long, value_enum, default_value_t = Game::None)]
-  pub game: Game,
-
   /// Operation to take on to the screenshots.
   /// If you specify anything other than 'Full' or 'CreateDirectory', you must also set '-g|--game' to other than
   /// 'None'.
-  #[arg(short = 'o', long, value_enum, default_value_t = Operation::Full)]
+  #[command(subcommand)]
   pub operation: Operation,
 
   /// Target directory (default: current working directory)
-  #[arg(default_value = get_cwd().into_os_string())]
+  #[arg(value_name = "TARGET", index = 2, default_value = get_cwd().into_os_string())]
   pub target: PathBuf,
 
+  /// Manual override: Area for blur, as 'x,y,width,height'
+  #[arg(long, global = true, value_parser = parse_tuple)]
+  pub blur: Option<Vec<[u32; 4]>>,
+
+  /// Manual override: crop height in pixel
+  #[arg(long, global = true)]
+  pub crop_height: Option<u32>,
+
+  /// Manual override: crop position
+  #[arg(long, global = true, value_enum)]
+  pub crop_pos: Option<CropPosition>,
+
+  /// Game that the screenshots are taken from
+  #[arg(short = 'g', long, global = true, value_enum, default_value_t = Game::None)]
+  pub game: Game,
+
   /// Manual override: Width of original image
-  #[arg(long)]
+  #[arg(long, global = true)]
   pub width_from: Option<u32>,
 
   /// Manual override: Width of converted image
-  #[arg(long)]
+  #[arg(long, global = true)]
   pub width_to: Option<u32>,
 }
 
