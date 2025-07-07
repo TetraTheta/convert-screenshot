@@ -17,7 +17,7 @@ pub struct Options {
   pub operation: Operation,
 
   /// Target directory (default: current working directory)
-  #[arg(value_name = "TARGET", index = 2, default_value = get_cwd().into_os_string())]
+  #[arg(global = true, value_name = "TARGET", default_value = get_cwd().into_os_string(), index = 1)]
   pub target: PathBuf,
 
   /// Manual override: Area for blur, as 'x,y,width,height'
@@ -70,11 +70,7 @@ pub fn merge_options(
   };
 
   // crop_pos
-  let crop_pos = opt.crop_pos.unwrap_or_else(|| match op {
-    Operation::Full => CropPosition::Full,
-    Operation::Center => CropPosition::Center,
-    _ => CropPosition::Bottom,
-  });
+  let crop_pos = opt.crop_pos.unwrap_or_else(|| config.crop_position(game, op));
 
   // width_from, width_to
   let (width_from, width_to) =

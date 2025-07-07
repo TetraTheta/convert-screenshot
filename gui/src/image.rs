@@ -74,7 +74,8 @@ pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, out_dir: PathBuf, 
       img = match mo.crop_pos {
         CropPosition::Bottom => img.crop_imm(0, h - mo.crop_height, w, mo.crop_height),
         CropPosition::Center => {
-          let top = (h.saturating_sub(mo.crop_height)) / 2;
+          let top = (h - mo.crop_height) / 2;
+          eprintln!("top: {}", top); // this will only be displayed in DEBUG
           img.crop_imm(0, top, w, mo.crop_height)
         },
         CropPosition::Full => img,

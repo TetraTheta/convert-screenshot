@@ -22,7 +22,14 @@ pub enum ImageMsg {
 }
 
 pub fn error_message(s: &str) {
-  DialogBuilder::message().set_level(MessageLevel::Error).set_title("ERROR").set_text(s).alert().show().unwrap();
+  DialogBuilder::message()
+    .set_level(MessageLevel::Error)
+    .set_title("ERROR")
+    .set_text(s)
+    .reset_owner()
+    .alert()
+    .show()
+    .unwrap();
 }
 
 fn label(x: i32, y: i32, width: i32, height: i32, title: &str) -> Frame {

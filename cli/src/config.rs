@@ -109,6 +109,27 @@ impl TomlConfig {
     }
   }
 
+  pub fn crop_position(&self, game: Game, op: Operation) -> CropPosition {
+    match game {
+      Game::None => CropPosition::Full,
+      Game::WuWa => {
+        let wuwa = self.game.wuwa.as_ref().expect("WuWa config must be present but could not find it.");
+        match op {
+          Operation::Background => wuwa.background.crop_position,
+          Operation::Center => wuwa.center.crop_position,
+          Operation::Cutscene => wuwa.cutscene.crop_position,
+          Operation::Foreground0 => wuwa.foreground0.crop_position,
+          Operation::Foreground1 => wuwa.foreground1.crop_position,
+          Operation::Foreground2 => wuwa.foreground2.crop_position,
+          Operation::Foreground3 => wuwa.foreground3.crop_position,
+          Operation::Foreground4 => wuwa.foreground4.crop_position,
+          Operation::Foreground5 => wuwa.foreground5.crop_position,
+          _ => wuwa.full.crop_position,
+        }
+      },
+    }
+  }
+
   pub fn folder_name(&self, op: Operation) -> Option<String> {
     match op {
       Operation::Background => Some(self.general.folder_name.background.clone()),
