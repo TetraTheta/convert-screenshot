@@ -36,7 +36,10 @@ pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, out_dir: PathBuf, 
       },
     };
 
-    if mo.game != Game::None {
+    if mo.game != Game::None || mo.operation == Operation::Full {
+      #[cfg(debug_assertions)]
+      eprintln!("▶ [DEBUG] op={:?}, game={:?}, width_to={}", mo.operation, mo.game, mo.width_to); // this will only be displayed in DEBUG
+
       let (w, h) = img.dimensions();
 
       if mo.operation != Operation::Full && w != mo.width_from {
@@ -75,6 +78,7 @@ pub fn process_image(images: Vec<PathBuf>, mo: &MergedOption, out_dir: PathBuf, 
         CropPosition::Bottom => img.crop_imm(0, h - mo.crop_height, w, mo.crop_height),
         CropPosition::Center => {
           let top = (h - mo.crop_height) / 2;
+          #[cfg(debug_assertions)]
           eprintln!("top: {}", top); // this will only be displayed in DEBUG
           img.crop_imm(0, top, w, mo.crop_height)
         },

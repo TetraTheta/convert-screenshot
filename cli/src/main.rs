@@ -202,9 +202,7 @@ fn main() {
 
 fn run_gui(mo: &MergedOption) {
   #[cfg(debug_assertions)]
-  {
-    println!("DEBUG: Content of MergedOption: {:#?}", mo)
-  }
+  println!("DEBUG: Content of MergedOption: {:#?}", mo);
 
   let bin_self = env::current_exe().expect("Could not get current exe path");
   let dir_parent = bin_self.parent().unwrap_or_else(|| Path::new("."));

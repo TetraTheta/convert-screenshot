@@ -28,9 +28,6 @@ impl MergedOption {
   }
 
   pub fn should_resize(&self, img_width: u32) -> bool {
-    if self.game == Game::None {
-      return false;
-    }
     match self.operation {
       Operation::Full => img_width > self.width_to,
       _ => img_width == self.width_from,

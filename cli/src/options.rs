@@ -73,8 +73,9 @@ pub fn merge_options(
   let crop_pos = opt.crop_pos.unwrap_or_else(|| config.crop_position(game, op));
 
   // width_from, width_to
-  let (width_from, width_to) =
-    opt.width_from.zip(opt.width_to).unwrap_or_else(|| if game != Game::None { (1920, 1280) } else { (0, 0) });
+  let (default_width_from, default_width_to) = if game != Game::None { (1920, 1280) } else { (0, 0) };
+  let width_from = opt.width_from.unwrap_or(default_width_from);
+  let width_to = opt.width_to.unwrap_or(default_width_to);
 
   MergedOption {
     blur,
