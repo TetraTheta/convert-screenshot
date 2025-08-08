@@ -118,8 +118,11 @@ pub fn run_gui(from: PathBuf, to: PathBuf, imgs: Vec<PathBuf>, app: App, r: Rece
   // Windows: dark title bar
   #[cfg(target_os = "windows")]
   {
+    use std::ptr;
+
     use windows_sys::Win32::Foundation::HWND;
     use windows_sys::Win32::Graphics::Dwm::{DWMWA_USE_IMMERSIVE_DARK_MODE, DwmSetWindowAttribute};
+    use windows_sys::Win32::Graphics::Gdi::{RDW_FRAME, RDW_INVALIDATE, RDW_UPDATENOW, RedrawWindow};
     use windows_sys::core::BOOL;
 
     let hwnd = win.raw_handle() as HWND;
@@ -131,6 +134,7 @@ pub fn run_gui(from: PathBuf, to: PathBuf, imgs: Vec<PathBuf>, app: App, r: Rece
         &dark as *const BOOL as *const _,
         size_of_val(&dark) as u32,
       );
+      RedrawWindow(hwnd, ptr::null_mut(), ptr::null_mut(), RDW_FRAME | RDW_INVALIDATE | RDW_UPDATENOW);
     }
   }
 
